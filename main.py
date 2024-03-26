@@ -1,5 +1,5 @@
-from detector import Detector
+from detector import Compare
 
-detector = Detector(model_type="KS")
+compare = Compare(correct_path="658934.png", image_path="jacob.jpg")
 
-detector.onImage("658934.png")
+compare.compare(save_img=True)
