@@ -17,7 +17,7 @@ class Detector:
         if model_type == "KS":
             model_name = "COCO-Keypoints/keypoint_rcnn_R_101_FPN_3x.yaml"
         elif model_type == "OD":
-            model_name == "COCO-Detection/faster_rcnn_R_101_FPN_3x.yaml"
+            model_name = "COCO-Detection/faster_rcnn_R_101_FPN_3x.yaml"
         elif model_type == "IS":
             model_name = "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"
         self.cfg.merge_from_file(model_zoo.get_config_file(model_name))
@@ -28,7 +28,7 @@ class Detector:
 
         self.predictor = DefaultPredictor(self.cfg)
 
-    def onImage(self, imagePath, save_img = False):
+    def onImage(self, imagePath: str, save_img = False):
         image = cv2.imread(imagePath)
         predictions = self.predictor(image)
 
@@ -88,17 +88,17 @@ class Compare:
             move_to_field=comp_fields
         )
 
-        predictions_correct["instances"]._fields = self.change_keypoint_heatmap_colors(
-            predictions_correct["instances"].get_fields(),
-            5
-        )
-
         correct_keypoints = predictions_correct["instances"].get_fields()["pred_keypoints"][0]
 
         viz = Visualizer(self.image[:,:,::-1], metadata = MetadataCatalog.get(self.detector.cfg.DATASETS.TRAIN[0]), 
                          instance_mode=ColorMode.IMAGE_BW)
-        
+
+        viz = self.change_keypoint_colors(viz, (212, 15, 41))
+
         viz.draw_instance_predictions(predictions_comp["instances"].to("cpu"))
+
+        viz = self.change_keypoint_colors(viz, (2, 240, 97))
+
         output = viz.draw_and_connect_keypoints(correct_keypoints.to("cpu"))
         # output = viz.draw_instance_predictions(predictions_correct["instances"].to("cpu"))
 
@@ -110,7 +110,15 @@ class Compare:
             plt.savefig("test2.png")
         
         # return predictions
-            
+    def change_keypoint_colors(self, viz, color):
+        for i in range(len(viz.metadata.keypoint_connection_rules)):
+            viz.metadata.keypoint_connection_rules[i] = (
+                viz.metadata.keypoint_connection_rules[i][0], 
+                viz.metadata.keypoint_connection_rules[i][1], 
+                color
+            )
+        return viz
+
     def scaleKeyPoints(self, field_to_scale, scale_to_field):
         x_val_to = scale_to_field["pred_boxes"].tensor[0][2] - scale_to_field["pred_boxes"].tensor[0][0]
         y_val_to = scale_to_field["pred_boxes"].tensor[0][3] - scale_to_field["pred_boxes"].tensor[0][1]
@@ -143,10 +151,6 @@ class Compare:
         return field_to_move
 
 
-    def change_keypoint_heatmap_colors(self, fields, color):
-        for indx, keypoint in enumerate(fields["pred_keypoints"][0]):
-            fields["pred_keypoints"][0][indx][2] = color
-        return fields
 """
 I can not find the ids for the keypoint! should I assume that the ids are as COCO?
 "name": "person", # (specific category)

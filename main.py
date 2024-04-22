@@ -1,5 +1,8 @@
-from detector import Compare
+from imageAnalysis.src.detector import Detector, Viz
 
-compare = Compare(correct_path="658934.png", image_path="jacob.jpg")
-
-compare.compare(save_img=True)
+detector = Detector("KS")
+viz = Viz(detector=detector, image="images/jacob.jpg")
+viz.add_keypoints()
+viz.add_keypoints_from_other_img("images/658934.png")
+viz.save_image("test.png")
+viz.show_image("Results")
